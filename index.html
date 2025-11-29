@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lector QR - Validador de Acceso v2</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #0f0f2e 0%, #1a0f3f 50%, #2d1b4e 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        color: #ffffff;
+      }
+
+      .container {
+        background: rgba(20, 20, 45, 0.9);
+        border-radius: 20px;
+        padding: 50px 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.3);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        max-width: 550px;
+        width: 100%;
+        backdrop-filter: blur(10px);
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #a0aec0;
+        margin-bottom: 40px;
+        font-size: 0.95em;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+
+      .scanner-wrapper {
+        position: relative;
+        margin-bottom: 30px;
+      }
+
+      #reader {
+        width: 100%;
+        border-radius: 15px;
+        overflow: hidden;
+        border: 2px solid rgba(99, 102, 241, 0.5);
+        box-shadow: 0 0 30px rgba(168, 85, 247, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      #reader:hover {
+        border-color: rgba(168, 85, 247, 0.8);
+        box-shadow: 0 0 40px rgba(168, 85, 247, 0.4);
+      }
+
+      .scanner-label {
+        position: absolute;
+        top: -30px;
+        left: 0;
+        font-size: 0.9em;
+        color: #a0aec0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+
+      #result {
+        margin-top: 30px;
+        padding: 25px;
+        border-radius: 12px;
+        width: 100%;
+        text-align: center;
+        font-size: 1.1em;
+        font-weight: 600;
+        text-transform: uppercase;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        letter-spacing: 0.5px;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #result strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 1.2em;
+      }
+
+      #result span.detail {
+        display: block;
+        font-size: 0.75em;
+        font-weight: 400;
+        margin-top: 12px;
+        text-transform: none;
+        letter-spacing: 0;
+        opacity: 0.9;
+      }
+
+      /* Estados con colores degradados */
+      .success {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%);
+        border: 2px solid #22c55e;
+        color: #86efac;
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.3), inset 0 0 20px rgba(34, 197, 94, 0.1);
+        animation: successPulse 0.6s ease-out;
+      }
+
+      .warning {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+        border: 2px solid #f59e0b;
+        color: #fcd34d;
+        box-shadow: 0 0 30px rgba(245, 158, 11, 0.3), inset 0 0 20px rgba(245, 158, 11, 0.1);
+      }
+
+      .error {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+        border: 2px solid #ef4444;
+        color: #fca5a5;
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.3), inset 0 0 20px rgba(239, 68, 68, 0.1);
+        animation: errorShake 0.5s ease-out;
+      }
+
+      .scanning {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+        border: 2px solid rgba(168, 85, 247, 0.6);
+        color: #c4b5fd;
+        font-size: 1em;
+        font-weight: 500;
+        text-transform: none;
+        animation: scanningPulse 2s ease-in-out infinite;
+      }
+
+      /* Animaciones */
+      @keyframes successPulse {
+        0% {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+        50% {
+          transform: scale(1.02);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes errorShake {
+        0%, 100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        75% {
+          transform: translateX(5px);
+        }
+      }
+
+      @keyframes scanningPulse {
+        0%, 100% {
+          box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), inset 0 0 15px rgba(168, 85, 247, 0.05);
+        }
+        50% {
+          box-shadow: 0 0 40px rgba(168, 85, 247, 0.5), inset 0 0 25px rgba(168, 85, 247, 0.15);
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 600px) {
+        .container {
+          padding: 35px 25px;
+        }
+
+        h1 {
+          font-size: 2em;
+        }
+
+        #result {
+          font-size: 0.95em;
+          padding: 20px;
+          min-height: 70px;
+        }
+
+        #result strong {
+          font-size: 1.05em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1><i class="fas fa-qrcode"></i> QR Validator</h1>
+      <p class="subtitle">Proyecto Final - AFBG</p>
+
+      <div class="scanner-wrapper">
+        <span class="scanner-label">Escanea tu código QR</span>
+        <div id="reader"></div>
+      </div>
+      
+      <div id="result" class="scanning">
+        <i class="fas fa-spinner fa-spin" style="margin-right: 10px;"></i> Esperando escaneo...
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
+    <script>
+      // --- Configuración del endpoint de la API ---
+      // *** IMPORTANTE: Usa la URL de tu API desplegada en Azure, no 127.0.0.1 en producción ***
+      const API_ENDPOINT = "https://aquivasuapi/validate_qr";
+      const resultDiv = document.getElementById("result");
+
+      // Ahora, la clase Html5Qrcode ya estará definida.
+      const html5QrCode = new Html5Qrcode("reader");
+
+      // Función que se ejecuta al escanear exitosamente
+      const onScanSuccess = (decodedText, decodedResult) => {
+        html5QrCode.pause();
+        resultDiv.className = "scanning";
+        resultDiv.innerHTML = `Escaneado: ${decodedText}. Procesando...`;
+
+        validateQrCode(decodedText);
+      };
+
+      // Función para enviar el ID a la API y manejar la respuesta
+      const validateQrCode = async (qrId) => {
+        // ... (el resto de tu lógica es correcta) ...
+        try {
+          const response = await fetch(API_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ qr_id: qrId }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.className = data.status;
+            resultDiv.innerHTML = `<strong>${data.message}</strong><br>ID: ${data.details.id}`;
+          } else {
+            resultDiv.className = "error";
+            resultDiv.innerHTML = `<strong>ERROR:</strong> ${
+              data.detail || "Error desconocido"
+            }`;
+          }
+        } catch (error) {
+          resultDiv.className = "error";
+          resultDiv.innerHTML = `<strong>ERROR DE CONEXIÓN:</strong> No se pudo conectar a la API.`;
+        } finally {
+          setTimeout(() => {
+            html5QrCode.resume();
+            resultDiv.className = "scanning";
+            resultDiv.innerHTML = "Esperando escaneo...";
+          }, 3000);
+        }
+      };
+
+      // Iniciar el escáner
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess,
+        (errorMessage) => {
+          // ...
+        }
+      );
+    </script>
+  </body>
+</html>
